@@ -2,7 +2,7 @@
 
 A single, shared library that includes the [Chromium Content
 module](http://www.chromium.org/developers/content-module) and all its
-dependencies (e.g., WebKit, V8, etc.).
+dependencies (e.g., Blink, V8, etc.).
 
 ## Using it in your app
 
@@ -12,22 +12,9 @@ TODO
 
 ### Prerequisites
 
-* Python 2.7
-
-#### Mac
-
-* Xcode 5.1
-
-#### Windows
-
-* Visual Studio 2013 Professional Update 2
-
-#### Linux
-
-##### CentOS 6.5
-
-* `sudo yum install pciutils-devel cups-devel libudev-devel`
-* Currently bootstrap completes but build does not
+* [Linux](https://chromium.googlesource.com/chromium/src/+/master/docs/linux_build_instructions_prerequisites.md)
+* [Mac](https://chromium.googlesource.com/chromium/src/+/master/docs/mac_build_instructions.md#Prerequisites)
+* [Windows](http://dev.chromium.org/developers/how-tos/build-instructions-windows)
 
 ### One-time setup
 
@@ -35,7 +22,8 @@ TODO
 
 ### Building
 
-    $ script/build
+    $ script/update -t x64
+    $ script/build -t x64
 
 ### Updating project files
 
@@ -45,3 +33,15 @@ If you change `VERSION` to point to a different Chromium release, or modify
     $ script/update
 
 This will regenerate all the project files. Then you can build again.
+
+### Building for ARM target
+
+```bash
+$ ./script/bootstrap
+$ ./script/update -t arm
+$ cd vendor/chromium/src
+$ ./build/install-build-deps.sh --arm
+$ ./chrome/installer/linux/sysroot_scripts/install-debian.wheezy.sysroot.py --arch=arm
+$ cd -
+$ ./script/build -t arm
+```

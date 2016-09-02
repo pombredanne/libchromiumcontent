@@ -1,0 +1,50 @@
+diff --git a/content/browser/renderer_host/render_message_filter.cc b/content/browser/renderer_host/render_message_filter.cc
+index 172a80d..15e170b 100644
+--- a/content/browser/renderer_host/render_message_filter.cc
++++ b/content/browser/renderer_host/render_message_filter.cc
+@@ -291,6 +291,7 @@ void RenderMessageFilter::OnCreateWindow(
+           params.opener_top_level_frame_url,
+           params.opener_security_origin,
+           params.window_container_type,
++          params.frame_name,
+           params.target_url,
+           params.referrer,
+           params.disposition,
+diff --git a/content/public/browser/content_browser_client.cc b/content/public/browser/content_browser_client.cc
+index d8c321b..f060cf7 100644
+--- a/content/public/browser/content_browser_client.cc
++++ b/content/public/browser/content_browser_client.cc
+@@ -281,6 +281,7 @@ bool ContentBrowserClient::CanCreateWindow(
+     const GURL& opener_top_level_frame_url,
+     const GURL& source_origin,
+     WindowContainerType container_type,
++    const std::string& frame_name,
+     const GURL& target_url,
+     const Referrer& referrer,
+     WindowOpenDisposition disposition,
+diff --git a/content/public/browser/content_browser_client.h b/content/public/browser/content_browser_client.h
+index 7a61399c..c665d45 100644
+--- a/content/public/browser/content_browser_client.h
++++ b/content/public/browser/content_browser_client.h
+@@ -139,6 +139,13 @@ class CONTENT_EXPORT ContentBrowserClient {
+  public:
+   virtual ~ContentBrowserClient() {}
+ 
++  // Electron: Allows overriding the SiteInstance when navigating.
++  virtual void OverrideSiteInstanceForNavigation(
++      BrowserContext* browser_context,
++      SiteInstance* current_instance,
++      const GURL& dest_url,
++      SiteInstance** new_instance) {}
++
+   // Allows the embedder to set any number of custom BrowserMainParts
+   // implementations for the browser startup code. See comments in
+   // browser_main_parts.h.
+@@ -510,6 +517,7 @@ class CONTENT_EXPORT ContentBrowserClient {
+                                const GURL& opener_top_level_frame_url,
+                                const GURL& source_origin,
+                                WindowContainerType container_type,
++                               const std::string& frame_name,
+                                const GURL& target_url,
+                                const Referrer& referrer,
+                                WindowOpenDisposition disposition,

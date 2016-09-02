@@ -5,6 +5,8 @@ import platform
 import subprocess
 import sys
 
+from lib.util import get_vs_env
+
 
 SOURCE_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 # We're in JENKINS_ROOT/workspace/libchromiumcontent. Walk up to JENKINS_ROOT.
@@ -13,17 +15,19 @@ S3_CREDENTIALS_FILE = os.path.join(JENKINS_ROOT, 'config', 's3credentials')
 
 
 def main():
-    if not os.path.isfile(S3_CREDENTIALS_FILE):
-        return 'Error: Can\'t find {0}'.format(S3_CREDENTIALS_FILE)
-    copy_to_environment(S3_CREDENTIALS_FILE)
+  if not os.path.isfile(S3_CREDENTIALS_FILE):
+    return 'Error: Can\'t find {0}'.format(S3_CREDENTIALS_FILE)
+  copy_to_environment(S3_CREDENTIALS_FILE)
 
-    print 'Python version:', platform.python_version()
-    print 'OS version:', os_version()
-
-    return (run_script('bootstrap') or
-            run_script('build') or
-            run_script('create-dist') or
-            run_script('upload'))
+  if sys.platform in ['win32', 'cygwin']:
+    return (run_ci(['-t', 'x64']) or
+            run_ci(['-t', 'ia32']))
+  elif sys.platform == 'linux2':
+    return (run_ci(['-t', 'x64']) or
+            run_ci(['-t', 'ia32']) or
+            run_ci(['-t', 'arm']))
+  else:
+    return run_ci([])
 
 
 def copy_to_environment(credentials_file):
@@ -45,11 +49,28 @@ def os_version():
     return platform.platform()
 
 
-def run_script(script):
-    script = os.path.join('script', script)
-    sys.stderr.write('+ {0}\n'.format(script))
-    sys.stderr.flush()
-    return subprocess.call([sys.executable, script])
+def run_ci(args):
+  if sys.platform in ['win32', 'cygwin']:
+    target_arch = args[1]
+    # Set build env for VS.
+    if target_arch == 'x64':
+      vs_env = get_vs_env('14.0', 'x86_amd64')
+    elif target_arch == 'ia32':
+      vs_env = get_vs_env('14.0', 'amd64_x86')
+    os.environ.update(vs_env)
+
+  return (run_script('bootstrap') or
+          run_script('update', args) or
+          run_script('build', args) or
+          run_script('create-dist', args) or
+          run_script('upload', args))
+
+
+def run_script(script, args=[]):
+  script = os.path.join('script', script)
+  sys.stderr.write('+ {0}\n'.format(script))
+  sys.stderr.flush()
+  return subprocess.call([sys.executable, script] + args)
 
 
 if __name__ == '__main__':

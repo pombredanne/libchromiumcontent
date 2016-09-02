@@ -1,4 +1,7 @@
+.DS_Store
 *.swp
+*.pyc
 /dist/
+/src/
 /libchromiumcontent.zip
-/libchromiumcontent-symbols.zip
+/libchromiumcontent-static.zip

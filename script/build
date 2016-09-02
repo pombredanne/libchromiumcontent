@@ -1,26 +1,51 @@
 #!/usr/bin/env python
 
+import argparse
 import os
 import subprocess
 import sys
 
+from lib.config import get_configuration, get_output_dir
+
 
 SOURCE_ROOT = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
 VENDOR_DIR = os.path.join(SOURCE_ROOT, 'vendor')
-OUT_DIR = os.path.join(VENDOR_DIR, 'chromium', 'src', 'out')
 TARGETS = ['chromiumcontent_all']
-CONFIGURATIONS = ['Debug', 'Release']
+COMPONENTS = ['static_library', 'shared_library', 'ffmpeg']
 
 NINJA = os.path.join(VENDOR_DIR, 'depot_tools', 'ninja')
 if sys.platform == 'win32':
-    NINJA = '{0}.exe'.format(NINJA)
+  NINJA = '{0}.exe'.format(NINJA)
 
 
 def main():
-    os.chdir(SOURCE_ROOT)
-    for config in CONFIGURATIONS:
-        config_dir = os.path.relpath(os.path.join(OUT_DIR, config))
-        subprocess.check_call([NINJA, '-C', config_dir] + TARGETS)
+  args = parse_args()
+  target_arch = args.target_arch
+
+  os.chdir(SOURCE_ROOT)
+
+  for component in COMPONENTS:
+    if args.component == 'all' or args.component == component:
+      if component == 'shared_library' and args.no_shared_library:
+        continue
+      out_dir = os.path.join(SOURCE_ROOT, 'src',
+                             get_output_dir(target_arch, component))
+      config = get_configuration(target_arch)
+      config_dir = os.path.relpath(os.path.join(out_dir, config))
+      target = 'chromiumcontent_all'
+      if component == 'ffmpeg':
+        target = 'ffmpeg'
+      subprocess.check_call([NINJA, '-C', config_dir, target])
+
+
+def parse_args():
+  parser = argparse.ArgumentParser(description='Build libchromiumcontent')
+  parser.add_argument('-t', '--target_arch', default='x64', help='x64 or ia32')
+  parser.add_argument('-c', '--component', default='all',
+                      help='static_library or shared_library or all')
+  parser.add_argument('-R', '--no_shared_library', action='store_true',
+                      help='Do not build shared library version')
+  return parser.parse_args()
 
 
 if __name__ == '__main__':
